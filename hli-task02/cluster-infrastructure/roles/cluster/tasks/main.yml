@@ -1,0 +1,45 @@
+---
+- name: Install necessary packages for cluster nodes
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - lvm2
+    - gfs2-utils
+    - corosync
+    - pcs
+  become: yes
+
+- name: Enable and start corosync and pcs services
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  loop:
+    - corosync
+    - pcs
+  become: yes
+
+- name: Configure corosync
+  template:
+    src: corosync.conf.j2
+    dest: /etc/corosync/corosync.conf
+  become: yes
+
+- name: Create a new cluster
+  command: pcs cluster setup --name mycluster cluster-node-1 cluster-node-2 cluster-node-3
+  become: yes
+  args:
+    creates: /etc/corosync/corosync.conf
+
+- name: Start the cluster
+  command: pcs cluster start --all
+  become: yes
+
+- name: Enable cluster autostart
+  command: pcs cluster enable --all
+  become: yes
+
+- name: Configure fencing device
+  command: pcs stonith create vbox-fence fence_vbox ipaddr=127.0.0.1 username=user password=password pcmk_host_list="cluster-node-1,cluster-node-2,cluster-node-3"
+  become: yes
