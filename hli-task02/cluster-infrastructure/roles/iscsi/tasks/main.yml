@@ -1,0 +1,21 @@
+---
+- name: Install iSCSI utilities
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - tgt
+    - open-iscsi
+
+- name: Configure iSCSI target
+  template:
+    src: iscsi.conf.j2
+    dest: /etc/tgt/targets.conf
+  notify:
+    - Restart tgt
+
+- name: Enable and start iSCSI service
+  service:
+    name: tgt
+    enabled: yes
+    state: started

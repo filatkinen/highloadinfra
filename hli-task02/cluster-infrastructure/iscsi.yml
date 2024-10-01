@@ -1,0 +1,4 @@
+---
+- hosts: iscsi_server
+  roles:
+    - iscsi
